@@ -22,12 +22,11 @@ const TelecastPage: React.FC = () => {
     const encrypted = encryptData(inputData)
     setEncryptedData(encrypted)
     setTelecastStatus('Data encrypted and ready for telecast')
-    // In a real application, you would send the encrypted data to your satellite network here
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8 text-gray-100">Telecast Data</h1>
+    <div className="container mx-auto py-20 px-4">
+      <h1 className="text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">Telecast Data</h1>
       <div className="max-w-md mx-auto">
         <div className="mb-4">
           <label htmlFor="userData" className="block text-sm font-medium text-gray-300 mb-2">
@@ -36,7 +35,7 @@ const TelecastPage: React.FC = () => {
           <input
             type="text"
             id="userData"
-            className="w-full px-3 py-2 bg-dark-300 border border-dark-200 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-100"
+            className="w-full px-3 py-2 bg-dark-300 border border-dark-200 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
             value={inputData}
             onChange={handleInputChange}
             placeholder="Enter your data here"
@@ -44,19 +43,19 @@ const TelecastPage: React.FC = () => {
         </div>
         <button
           onClick={handleTelecast}
-          className="w-full bg-accent-100 text-white py-2 px-4 rounded-md hover:bg-accent-200 transition duration-300 flex items-center justify-center"
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-md hover:from-blue-600 hover:to-purple-700 transition duration-300 flex items-center justify-center"
         >
           <Send size={18} className="mr-2" />
           Encrypt and Telecast
         </button>
         {encryptedData && (
           <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-2 text-gray-200">Encrypted Data:</h2>
+            <h2 className="text-lg font-semibold mb-2 text-blue-400">Encrypted Data:</h2>
             <p className="bg-dark-300 p-3 rounded-md break-all text-gray-300">{encryptedData}</p>
           </div>
         )}
         {telecastStatus && (
-          <p className="mt-4 text-accent-100 font-semibold">{telecastStatus}</p>
+          <p className="mt-4 text-purple-400 font-semibold">{telecastStatus}</p>
         )}
       </div>
     </div>
