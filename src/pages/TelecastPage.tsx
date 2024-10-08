@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
 import { Send } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -61,7 +60,6 @@ const TelecastPage: React.FC = () => {
         console.log("packet_id", packet_id);
         setPacketId(packet_id);
 
-        const messageData = data;
 
         const connection = new Connection("https://api.devnet.solana.com");
         const transaction = new Transaction();
@@ -75,7 +73,7 @@ const TelecastPage: React.FC = () => {
         console.log("system program", anchor.web3.SystemProgram.programId);
 
         const ix = await program.methods
-            .initializeData(packet_id.toString(), messageData)
+            .initializeData(packet_id.toString(), data)
             .accounts({
                 dataAccount: dataPDA,
                 user: publicKey,
@@ -88,6 +86,7 @@ const TelecastPage: React.FC = () => {
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = publicKey!;
         transaction.add(ix);
+
         const signTx = await wallet?.signTransaction(transaction);
         const serialized_transaction = signTx?.serialize();
         console.log("Here's the transaction", serialized_transaction);
@@ -102,7 +101,7 @@ const TelecastPage: React.FC = () => {
 
     return (
         <div className="container mx-auto py-20 px-4">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
                 <h1 className="text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
                     Telecast Data
                 </h1>
@@ -110,10 +109,7 @@ const TelecastPage: React.FC = () => {
             </div>
             <div className="max-w-md mx-auto">
                 <div className="mb-4">
-                    <label
-                        htmlFor="userData"
-                        className="block text-sm font-medium text-gray-300 mb-2"
-                    >
+                    <label htmlFor="userData" className="block text-sm font-medium text-gray-300 mb-2">
                         Enter data to telecast:
                     </label>
                     <input
@@ -132,20 +128,40 @@ const TelecastPage: React.FC = () => {
                     <Send size={18} className="mr-2" />
                     Encrypt and Telecast
                 </button>
+
                 {encryptedData && (
                     <div className="mt-6">
-                        <h2 className="text-lg font-semibold mb-2 text-blue-400">
-                            Encrypted Data:
-                        </h2>
+                        <h2 className="text-lg font-semibold mb-2 text-blue-400">Encrypted Data:</h2>
                         <p className="bg-dark-300 p-3 rounded-md break-all text-gray-300">
                             {encryptedData}
                         </p>
                     </div>
                 )}
+
                 {telecastStatus && (
-                    <p className="mt-4 text-purple-400 font-semibold">
-                        {telecastStatus}
-                    </p>
+                    <p className="mt-4 text-purple-400 font-semibold">{telecastStatus}</p>
+                )}
+
+                {(packetId || transactionId) && (
+                    <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
+                        <h3 className="text-white text-xl font-bold mb-4">Transaction Details</h3>
+                        {packetId && (
+                            <div className="mb-2">
+                                <span className="text-gray-300 font-medium">Packet ID:</span>
+                                <p className="text-white bg-gray-800 p-2 rounded-md break-all">
+                                    {packetId}
+                                </p>
+                            </div>
+                        )}
+                        {transactionId && (
+                            <div>
+                                <span className="text-gray-300 font-medium">Transaction ID:</span>
+                                <p className="text-white bg-gray-800 p-2 rounded-md break-all">
+                                    {transactionId}
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
         </div>
