@@ -1,33 +1,35 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
 import { Send } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { Transaction, Connection } from "@solana/web3.js";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Connection, PublicKey } from "@solana/web3.js";
-import { Program, AnchorProvider } from "@project-serum/anchor";
-import bs58 from 'bs58';
+import { anchorProgram } from "../../solana/program";
+import { useAnchorWallet } from "@solana/wallet-adapter-react";
+import { Wallet } from "@coral-xyz/anchor";
+import { v4 as uuidV4 } from "uuid";
+import CryptoJS from "crypto-js";
+// import * as anchor from "@coral-xyz/anchor";
+import * as anchor from "@project-serum/anchor";
 
 const TelecastPage: React.FC = () => {
     const [inputData, setInputData] = useState("");
     const [encryptedData, setEncryptedData] = useState("");
     const [telecastStatus, setTelecastStatus] = useState("");
+    const [packetId, setPacketId] = useState("");
+    const [transactionId, setTransactionId] = useState("");
+    const decryptionId = "satmesh";
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInputData(e.target.value);
     };
 
     const encryptData = (data: string): string => {
-        return data
-            .split("")
-            .map((char) => String.fromCharCode(char.charCodeAt(0) ^ 0x7a))
-            .join("");
+        const encrypted = CryptoJS.AES.encrypt(data, decryptionId).toString();
+        setEncryptedData(encrypted);
+        console.log("encrypted data: ", encrypted);
+        return data;
     };
-
-    const encodeToBase58 = (data: string): string => {
-      // Convert string to Uint8Array
-      const uint8Array = new TextEncoder().encode(data);
-      // Encode Uint8Array to base58
-      return bs58.encode(uint8Array);
-  };
 
     const telecastData = async (data: string) => {
         setTelecastStatus("Sending Transaction to Solana");
@@ -36,89 +38,67 @@ const TelecastPage: React.FC = () => {
             setTelecastStatus("Transaction sent to Solana");
         } catch (error) {
             console.error("Error sending transaction:", error);
-            setTelecastStatus(`Error: ${error instanceof Error ? error.message : String(error)}`);
+            setTelecastStatus(
+                `Error: ${
+                    error instanceof Error ? error.message : String(error)
+                }`
+            );
         }
     };
 
     const handleTelecast = () => {
         const encrypted = encryptData(inputData);
-        setEncryptedData(encrypted);
         setTelecastStatus("Data encrypted and ready for telecast");
         telecastData(encrypted);
     };
 
-    const { publicKey, signTransaction, connected } = useWallet();
+    const wallet = useAnchorWallet();
+    const { publicKey } = useWallet();
+    const program = anchorProgram(wallet as Wallet);
 
-    const sendMessage = async (message: string) => {
-      message = encodeToBase58(message);
-      
-        const idl = {
-            version: "0.1.0",
-            name: "my_payable_contract",
-            instructions: [
-                {
-                    name: "sendMessage",
-                    accounts: [
-                        { name: "user", isMut: true, isSigner: true },
-                        {
-                            name: "programAccount",
-                            isMut: true,
-                            isSigner: false,
-                        },
-                    ],
-                    args: [{ name: "message", type: "string" }],
-                },
-            ],
-            errors: [
-                {
-                    code: 6000,
-                    name: "InsufficientFunds",
-                    msg: "Insufficient funds sent for this transaction.",
-                },
-            ],
-        };
+    async function sendMessage(data: string) {
+        const packet_id = uuidV4();
+        console.log("packet_id", packet_id);
+        setPacketId(packet_id);
 
-        // Replace these with your actual program ID and account
-        const PROGRAM_ID = "B53qbHQgjbcpyDkBJ48U3b91K6Aqt8xtPLHqDT4D3A6x";
-        const PROGRAM_ACCOUNT = "Your_Actual_Program_Account_Public_Key_Here";
+        const messageData = data;
 
-        if (!connected) throw new Error("Wallet not connected");
-        if (!publicKey) throw new Error("No public key found");
-        if (!signTransaction)
-            throw new Error("Wallet does not support transaction signing");
+        const connection = new Connection("https://api.devnet.solana.com");
+        const transaction = new Transaction();
 
-        const connection = new Connection(
-            "https://api.devnet.solana.com",
-            "processed"
+        const [dataPDA] = anchor.web3.PublicKey.findProgramAddressSync(
+            [Buffer.from("sat_mesh"), publicKey!.toBuffer()],
+            program.programId
         );
+        console.log("messagePDA", dataPDA.toBase58());
+        console.log("public key", publicKey);
+        console.log("system program", anchor.web3.SystemProgram.programId);
 
-        const provider = new AnchorProvider(
-            connection,
-            { publicKey, signTransaction },
-            { preflightCommitment: "processed" }
+        const ix = await program.methods
+            .initializeData(packet_id.toString(), messageData)
+            .accounts({
+                dataAccount: dataPDA,
+                user: publicKey,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            } as never)
+            .instruction();
+
+        console.log("instruction", ix);
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = publicKey!;
+        transaction.add(ix);
+        const signTx = await wallet?.signTransaction(transaction);
+        const serialized_transaction = signTx?.serialize();
+        console.log("Here's the transaction", serialized_transaction);
+
+        const sig = await connection.sendRawTransaction(
+            serialized_transaction!
         );
-
-        try {
-            const programId = new PublicKey(PROGRAM_ID);
-            const programAccount = new PublicKey(PROGRAM_ACCOUNT);
-
-            const program = new Program(idl, programId, provider);
-
-            const tx = await program.methods
-                .sendMessage(message)
-                .accounts({
-                    user: publicKey,
-                    programAccount: programAccount,
-                })
-                .signers([])
-                .rpc();
-
-            console.log("Transaction successful!", tx);
-        } catch (error) {
-            console.error("Transaction failed:", error);
-            throw error;
-        }
-    };
+        console.log("signature is : ", sig);
+        console.log("public key detected", publicKey);
+        console.log("encrypted message broadcasted");
+    }
 
     return (
         <div className="container mx-auto py-20 px-4">
