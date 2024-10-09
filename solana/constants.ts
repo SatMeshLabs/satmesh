@@ -1,9 +1,3 @@
-/**
- * Program IDL in camelCase format in order to be used in JS/TS.
- *
- * Note that this is only a type helper and is not the actual IDL. The original
- * IDL can be found at `target/idl/satmesh.json`.
- */
 export type Satmesh = {
   "address": "9NDusP73MVbsD2tt8RFEP83jBRwXw3aw37PkeeCRbFxs",
   "metadata": {

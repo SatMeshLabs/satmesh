@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { Send } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -8,8 +10,7 @@ import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { Wallet } from "@coral-xyz/anchor";
 import { v4 as uuidV4 } from "uuid";
 import CryptoJS from "crypto-js";
-// import * as anchor from "@coral-xyz/anchor";
-import * as anchor from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
 
 const TelecastPage: React.FC = () => {
     const [inputData, setInputData] = useState("");
@@ -17,10 +18,14 @@ const TelecastPage: React.FC = () => {
     const [telecastStatus, setTelecastStatus] = useState("");
     const [packetId, setPacketId] = useState("");
     const [transactionId, setTransactionId] = useState("");
-    const decryptionId = "satmesh";
+    const [decryptionId, setDecryptionId] = useState("");
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInputData(e.target.value);
+    };
+
+    const handleSecretChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDecryptionId(e.target.value);
     };
 
     const encryptData = (data: string): string => {
@@ -53,51 +58,56 @@ const TelecastPage: React.FC = () => {
 
     const wallet = useAnchorWallet();
     const { publicKey } = useWallet();
-    const program = anchorProgram(wallet as Wallet);
 
     async function sendMessage(data: string) {
+
         const packet_id = uuidV4();
-        console.log("packet_id", packet_id);
         setPacketId(packet_id);
 
+        const  program = anchorProgram(wallet as Wallet);
+
+        const id1 = packet_id;
+        const value1 = data;
 
         const connection = new Connection("https://api.devnet.solana.com");
-        const transaction = new Transaction();
 
         const [dataPDA] = anchor.web3.PublicKey.findProgramAddressSync(
             [Buffer.from("sat_mesh"), publicKey!.toBuffer()],
             program.programId
         );
-        console.log("messagePDA", dataPDA.toBase58());
-        console.log("public key", publicKey);
-        console.log("system program", anchor.web3.SystemProgram.programId);
 
-        const ix = await program.methods
-            .initializeData(packet_id.toString(), data)
-            .accounts({
-                dataAccount: dataPDA,
-                user: publicKey,
-                systemProgram: anchor.web3.SystemProgram.programId,
-            } as never)
-            .instruction();
+        try {
+            const transaction = new Transaction();
 
-        console.log("instruction", ix);
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = publicKey!;
-        transaction.add(ix);
+            const ix = await program.methods
+                .initializeData(id1, value1)
+                .accounts({
+                    dataAccount: dataPDA,
+                    user: publicKey,
+                    systemProgram: anchor.web3.SystemProgram.programId,
+                } as any)
+                .instruction();
 
-        const signTx = await wallet?.signTransaction(transaction);
-        const serialized_transaction = signTx?.serialize();
-        console.log("Here's the transaction", serialized_transaction);
+            transaction.add(ix);
 
-        const sig = await connection.sendRawTransaction(
-            serialized_transaction!
-        );
-        console.log("signature is : ", sig);
-        console.log("public key detected", publicKey);
-        console.log("encrypted message broadcasted");
+            const { blockhash } = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = publicKey!;
+
+            const signTx = await wallet?.signTransaction(transaction);
+            const serializedTx = signTx?.serialize();
+            const txSignature = await connection.sendRawTransaction(
+                serializedTx!
+            );
+    
+            setTransactionId(txSignature);
+            console.log("User public key:", publicKey!.toBase58());
+            console.log("Transaction successful, signature:", txSignature);
+        } catch (error) {
+            console.error("Error during transaction:", error);
+        }
     }
+
 
     return (
         <div className="container mx-auto py-20 px-4">
@@ -115,12 +125,20 @@ const TelecastPage: React.FC = () => {
                     <input
                         type="text"
                         id="userData"
-                        className="w-full px-3 py-2 bg-dark-300 border border-dark-200 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        className="mb-2 w-full px-3 py-2 bg-dark-300 border border-dark-200 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
                         value={inputData}
                         onChange={handleInputChange}
                         placeholder="Enter your data here"
                     />
-                </div>
+                <input
+                        type="text"
+                        id="userData"
+                        className="w-full px-3 py-2 bg-dark-300 border border-dark-200 text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        value={decryptionId}
+                        onChange={handleSecretChange}
+                        placeholder="Enter decryption key"
+                        />
+                        </div>
                 <button
                     onClick={handleTelecast}
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-md hover:from-blue-600 hover:to-purple-700 transition duration-300 flex items-center justify-center"
@@ -142,7 +160,7 @@ const TelecastPage: React.FC = () => {
                     <p className="mt-4 text-purple-400 font-semibold">{telecastStatus}</p>
                 )}
 
-                {(packetId || transactionId) && (
+                {(packetId && transactionId) && (
                     <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
                         <h3 className="text-white text-xl font-bold mb-4">Transaction Details</h3>
                         {packetId && (
@@ -156,9 +174,12 @@ const TelecastPage: React.FC = () => {
                         {transactionId && (
                             <div>
                                 <span className="text-gray-300 font-medium">Transaction ID:</span>
+                                <a href={"https://explorer.solana.com/tx/"+ transactionId + "?cluster=devnet"} target= "_blank">
+
                                 <p className="text-white bg-gray-800 p-2 rounded-md break-all">
                                     {transactionId}
                                 </p>
+                                </a>
                             </div>
                         )}
                     </div>

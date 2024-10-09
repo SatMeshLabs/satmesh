@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as anchor from '@coral-xyz/anchor';
-import type NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
-import * as spl from '@solana/spl-token';
 import type { Satmesh } from './constants';
 import { IDL } from './constants';
 

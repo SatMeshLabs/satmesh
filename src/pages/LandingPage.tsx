@@ -14,7 +14,7 @@ const LandingPage: React.FC = () => {
             Revolutionizing IoT with Satellite-Enabled P2P Networks
           </p>
           <Link
-            to="/api-data"
+            to="/satellite-data"
             className="inline-flex items-center px-6 py-3 rounded-full text-lg font-semibold text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition duration-300 transform hover:scale-105"
           >
             Explore Data

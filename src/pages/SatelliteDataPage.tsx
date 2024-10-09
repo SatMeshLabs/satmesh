@@ -32,7 +32,7 @@ interface SatelliteData {
   }
 }
 
-const ApiDataPage: React.FC = () => {
+const SatelliteDataPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<SatelliteData[]>([])
   const [selectedPacket, setSelectedPacket] = useState<SatelliteData | null>(null)
@@ -140,4 +140,4 @@ const ApiDataPage: React.FC = () => {
   )
 }
 
-export default ApiDataPage
+export default SatelliteDataPage

@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
-import ApiDataPage from "./pages/ApiDataPage";
+import SatelliteDataPage from "./pages/SatelliteDataPage";
 import TelecastPage from "./pages/TelecastPage";
 import Navbar from "./components/Navbar";
 
@@ -12,7 +12,7 @@ function App() {
                     <Navbar />
                     <Routes>
                         <Route path="/" element={<LandingPage />} />
-                        <Route path="/api-data" element={<ApiDataPage />} />
+                        <Route path="/satellite-data" element={<SatelliteDataPage />} />
                         
                             <Route
                                 path="/telecast"

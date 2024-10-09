@@ -12,7 +12,7 @@ const Navbar: React.FC = () => {
         </Link>
         <div className="space-x-4">
           <Link to="/" className="hover:text-blue-400 transition duration-300">Home</Link>
-          <Link to="/api-data" className="hover:text-blue-400 transition duration-300">API Data</Link>
+          <Link to="/satellite-data" className="hover:text-blue-400 transition duration-300">Satellite Data</Link>
           <Link to="/telecast" className="hover:text-blue-400 transition duration-300">Telecast</Link>
         </div>
       </div>
